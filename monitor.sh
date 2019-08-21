@@ -265,24 +265,16 @@ connectable_present_devices () {
 		this_state=${this_state:-0}
 
 		#TEST IF THIS DEVICE MATCHES THE TARGET SCAN STATE
-		if [ "$this_state" == "1" ] && [[ "$previously_connected_devices" =~ .*$known_addr.* ]] ; then 
+		if [ "$this_state" == "1" ]; then 
 				
 			#CREATE CONNECTION AND DETERMINE RSSI 
 			#AVERAGE OVER THREE CYCLES; IF BLANK GIVE VALUE OF 100
-			known_device_rssi=$(counter=0; \
-				avg_total=0; \
-				hcitool cc "$known_addr"; \
-				avg_total=""; \
-				for i in 1 2 3; \
-				do scan_result=$(hcitool rssi "$known_addr" 2>&1); \
+			known_device_rssi=$( \
+				scan_result=$(hcitool cc "$known_addr" &&  hcitool rssi "$known_addr" 2>&1); \
 				scan_result=${scan_result//[^0-9]/}; \
 				scan_result=${scan_result:-99}; \
-				[[ "$scan_result" == "0" ]] && scan_result=99; \
-				counter=$((counter+1)); \
-				avg_total=$((avg_total + scan_result )); \
-				sleep 0.5; \
-				done; \
-				printf "%s" "$(( avg_total / counter ))")
+				sleep 0.5;
+				printf "%s" "$scan_result")
 
 			#PUBLISH MESSAGE TO RSSI SENSOR 
 			publish_rssi_message \
@@ -1186,7 +1178,7 @@ while true; do
 				difference_last_rssi=$((timestamp - last_rssi_scan))
 
 				#ONLY EVER 5 MINUTES
-				if [ "$difference_last_rssi" -gt "100" ] || [ -z "$last_rssi_scan" ] ; then 
+				if [ "$difference_last_rssi" -gt "5" ] || [ -z "$last_rssi_scan" ] ; then 
 					$PREF_VERBOSE_LOGGING && log "${GREEN}[CMD-INST]	${NC}[${GREEN}pass mqtt${NC}] rssi update scan requested ${NC}"
 					connectable_present_devices
 					last_rssi_scan=$(date +%s)
