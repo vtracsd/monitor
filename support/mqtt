@@ -215,6 +215,12 @@ publish_rssi_message () {
 		message="$2"
 		mqtt_topic_branch="$address"
 
+		#CLEAR PREVIOUS RETAINED MESSAGE
+		retain_flag="false"
+		if [ "$PREF_SHOULD_RETAIN" == true ]; then 
+			should_retain="-r "
+		fi 
+
 	    #ALIASES? 
    		$PREF_ALIAS_MODE && [ "${mqtt_aliases[$address]+abc}" ] && mqtt_topic_branch=${mqtt_aliases[$address]:-$address}
 		
@@ -225,6 +231,7 @@ publish_rssi_message () {
 		#POST TO MQTT
 		while mqtt_error_handler $($mosquitto_pub_path \
 		-I "$mqtt_publisher_identity" \
+		$should_retain \
 		$mqtt_version_append \
 		$mqtt_ca_file_append \
 		-L "$mqtt_url$topic" \
